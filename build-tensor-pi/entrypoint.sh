@@ -14,5 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-
-jupyter notebook "$@"
+# 后台执行【推荐】
+# jupyter notebook "$@"
+jupyter lab  "$@"
