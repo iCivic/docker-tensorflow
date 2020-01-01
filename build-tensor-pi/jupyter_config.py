@@ -16,12 +16,13 @@ import os
 from IPython.lib import passwd
 
 c.NotebookApp.ip = '*'
-c.NotebookApp.port = 7777 # 指定端口，默认8888
+c.NotebookApp.port = 8888 # 指定端口，默认8888
 c.NotebookApp.open_browser = False # 禁止自动打开浏览器
 c.NotebookApp.allow_root = True # 以root身份运行
 c.MultiKernelManager.default_kernel_name = 'python3'
-c.NotebookApp.notebook_dir = '/data/jupyter-root'     # 指定工作目录
+c.NotebookApp.notebook_dir = '/notebooks'     # 指定工作目录
 c.PAMAuthenticator.encoding = 'utf8'  #指定utf-8编码，解决读取中文路径或者文件乱码问题
+c.InteractiveShell.ast_node_interactivity = "all"
  
 # sets a password if PASSWORD is set in the environment
 if 'PASSWORD' in os.environ:
