@@ -1,5 +1,14 @@
 FROM debian-py36:stretch
 
+LABEL description="深度学习研发环境"
+LABEL version="3.6.9"
+LABEL arch="x86_64"
+LABEL build_time=
+LABEL git_url1=https://github.com/iCivic/docker-tensorflow
+LABEL git_url2=https://github.com/arwineap/docker-debian-python3.6.git
+LABEL git_branch=master
+LABEL git_commit=
+
 ################
 # dependencies #
 ################
@@ -13,14 +22,35 @@ RUN apt-get update && \
 	dpkg-reconfigure -f noninteractive tzdata && \
 	rm -rf /etc/localtime && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
 	echo "Asia/Shanghai" > /etc/timezone && \
-	apt-get install -y --no-install-recommends
-	
+	apt-get install -y --no-install-recommends graphviz
+
+# https://github.com/petronetto/docker-python-deep-learning
 RUN pip3 --no-cache-dir install \
 		tensorflow==2.0.0.0 \
+		tensorboard \
         matplotlib \
 		ipykernel \
 		jupyter \
-		jupyterlab
+		jupyterlab \
+		pyyaml \
+        pymkl \
+        cffi \
+        h5py \
+        requests \
+        pillow \
+        graphviz \
+        numpy \
+        pandas \
+        scipy \
+        scikit-learn \
+        seaborn \
+        xgboost \
+        keras \
+		xlrd \
+        /mnt/wheelhouse/torch-1.1.0-cp36-cp36m-linux_x86_64.whl \
+        /mnt/wheelhouse/torchvision-0.3.0-cp36-cp36m-linux_x86_64.whl \
+        mxnet-mkl && \
+	jupyter nbextension enable --py widgetsnbextension
 
 # 使用Docker搭建Anaconda Python3.6的练习环境 https://www.jianshu.com/p/1015dd0670db
 # https://github.com/ContinuumIO/docker-images/blob/master/miniconda3/debian/Dockerfile
@@ -43,6 +73,9 @@ RUN mv /tmp/Miniconda3-4.7.12-Linux-x86_64.sh ~/miniconda.sh && \
 	conda config --set show_channel_urls yes && \
 	conda -V
 	
+# 拷贝中文字体
+cp ./SIMHEI.TTF /usr/local/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/
+
 # jupyter-notebook添加python虚拟环境的kernel https://www.cnblogs.com/pursuiting/p/9447328.html
 # https://stackoverflow.com/questions/37945759/condas-source-activate-virtualenv-does-not-work-within-dockerfile
 # https://www.jianshu.com/p/3da9568f2775
@@ -66,22 +99,17 @@ COPY notebooks /notebooks
 #   https://github.com/ipython/ipython/issues/7062
 # We just add a little wrapper script.
 COPY entrypoint.sh /
-RUN chmod +x /entrypoint.sh
-
+RUN chmod +x /entrypoint.sh && \
+    mkdir -p /tmp/tensorboard_logs
+	
 # TensorBoard
 EXPOSE 6006
 # IPython
 EXPOSE 8888
-VOLUME ["/notebooks"]
+VOLUME ["/notebooks", \
+        "/tmp/tensorflow_logs", \
+		"/tmp/mnist"]
 
 WORKDIR "/notebooks"
-
-LABEL description="机器学习开发平台"
-LABEL version="1.0"
-LABEL arch="x86_64"
-LABEL build_time=xxx
-LABEL git_url=xxx
-LABEL git_branch=xxx
-LABEL git_commit=xxx
 
 CMD ["/entrypoint.sh", "--allow-root"]

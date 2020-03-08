@@ -14,6 +14,17 @@
 # limitations under the License.
 # ==============================================================================
 
+echo "启动深度学习研发环境"
 # 后台执行【推荐】
 # jupyter notebook "$@"
-jupyter lab  "$@"
+echo "Run jupyter lab"
+jupyter lab  "$@" --ip=0.0.0.0 --port=8888 > $HOME/jupyter_notebook.log 2>&1 &
+
+# Tensorboard
+echo "Run tensorboard"
+# https://github.com/tensorflow/tensorboard
+tensorboard --logdir='/tmp/tensorflow_logs' --bind_all --port=6006 > $HOME/tensorboard.log 2>&1 &
+
+# To keep running until the both are terminated
+wait
+echo "退出"
