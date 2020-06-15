@@ -24,6 +24,17 @@ RUN apt-get update && \
 	echo "Asia/Shanghai" > /etc/timezone && \
 	apt-get install -y --no-install-recommends graphviz
 
+# OpenJDK
+RUN apt-get update && \
+    mkdir -p /usr/share/man/man1 && \
+    apt-get install -y --no-install-recommends \     
+	  # python3 python3-pip \
+	  openjdk-8-jre-headless \
+      ca-certificates-java && \
+	rm -rf /var/lib/apt/* && \
+    apt-get autoremove -y && \
+    apt-get clean	  
+	  
 # https://github.com/petronetto/docker-python-deep-learning
 RUN pip3 --no-cache-dir install \
 		tensorflow==2.0.0.0 \
@@ -74,7 +85,7 @@ RUN mv /tmp/Miniconda3-4.7.12-Linux-x86_64.sh ~/miniconda.sh && \
 	conda -V
 	
 # 拷贝中文字体
-cp ./SIMHEI.TTF /usr/local/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/
+COPY ./SIMHEI.TTF /usr/local/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/
 
 # jupyter-notebook添加python虚拟环境的kernel https://www.cnblogs.com/pursuiting/p/9447328.html
 # https://stackoverflow.com/questions/37945759/condas-source-activate-virtualenv-does-not-work-within-dockerfile
@@ -89,7 +100,7 @@ RUN python3.6 -m ipykernel.kernelspec --name Python36 && \
 	jupyter kernelspec list && \
 	jupyter lab --generate-config
 
-COPY jupyter_config.py /root/.jupyter/jupyter_notebook_config.py 
+COPY jupyter_config.py /root/.jupyter/jupyter_notebook_config.py
 # COPY jupyter_config.py /root/.jupyter/jupyter_lab_config.py 
 
 # Copy sample notebooks.
@@ -101,7 +112,39 @@ COPY notebooks /notebooks
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh && \
     mkdir -p /tmp/tensorboard_logs
+
+# 将Jupyter notebook转换为pdf：安装pandoc和MiKTeX
+# https://blog.csdn.net/sinat_21591675/article/details/86530342
+# http://www.360doc.com/content/19/0126/22/52645714_811482441.shtml
+
+# Spark
+COPY ./spark-2.4.5-bin-hadoop2.7.tgz /tmp/spark-2.4.5-bin-hadoop2.7.tgz
+COPY ./toree-0.3.0.tar.gz /tmp/toree-0.3.0.tar.gz
+
+ARG APACHE_SPARK_VERSION=2.4.5
+ARG HADOOP_VERSION=2.7
+ENV SPARK_NAME=spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}
+
+ENV SPARK_DIR /opt/${SPARK_NAME}
+ENV SPARK_HOME /usr/local/spark
+ENV PYTHONPATH $SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$SPARK_HOME/python/lib/pyspark.zip
+ENV SPARK_OPTS --driver-java-options=-Xms1024M --driver-java-options=-Xmx4096M --driver-java-options=-Dlog4j.logLevel=info
+
+RUN pip3 --no-cache-dir install py4j
+RUN tar -xzf /tmp/${SPARK_NAME}.tgz -C /opt/ && \
+    ln -s $SPARK_DIR $SPARK_HOME #&& \
+	#rm /usr/bin/pip && \
+	#rm /usr/bin/python && \
+	#ln -s /usr/local/bin/pip3.6 /usr/bin/pip && \
+    #ln -s /usr/local/bin/python3.6 /usr/bin/python
 	
+# Toree
+RUN pip3 install --no-cache-dir /tmp/toree-0.3.0.tar.gz && \
+    jupyter toree install --spark_home=/usr/local/spark
+
+# Spark
+EXPOSE 4040
+
 # TensorBoard
 EXPOSE 6006
 # IPython
